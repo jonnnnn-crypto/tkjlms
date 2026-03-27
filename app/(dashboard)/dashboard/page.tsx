@@ -1,241 +1,153 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { BookOpen, Trophy, Clock, PlayCircle, Star, Target, Zap, ChevronRight, Activity } from "lucide-react";
+import Link from "next/link";
 
-import { motion, Variants } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { BookOpen, Trophy, Clock, PlayCircle, Star, Target, Zap, ChevronRight, Activity, Bell } from "lucide-react";
+function XPBar({ xp, level }: { xp: number; level: number }) {
+  const xpForLevel = level * 500;
+  const progress = Math.min(100, Math.round((xp % xpForLevel) / xpForLevel * 100));
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="text-muted-foreground">Level {level}</span>
+        <span className="font-semibold text-primary">{xp % xpForLevel} / {xpForLevel} XP</span>
+      </div>
+      <div className="h-2 rounded-full bg-secondary overflow-hidden">
+        <div className="h-full rounded-full bg-primary transition-all duration-700" style={{ width: `${progress}%` }} />
+      </div>
+    </div>
+  );
+}
 
-// Mock Data for the Student Dashboard
-const MOCK_USER = {
-  name: "Budi Santoso",
-  level: 12,
-  xp: 4500,
-  nextLevelXp: 5000,
-};
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
-const ACTIVE_COURSES = [
-  { id: "1", title: "Administrasi Sistem Jaringan", progress: 65, nextLesson: "Setup DNS Server", icon: Target },
-  { id: "2", title: "Teknologi Layanan Jaringan", progress: 30, nextLesson: "VoIP Protocols", icon: Activity },
-];
+  // Fetch profile
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*, classes(name)")
+    .eq("id", user.id)
+    .single();
 
-const ASSIGNMENTS = [
-  { id: "1", title: "Laporan Konfigurasi MikroTik", course: "ASJ", due: "Today, 23:59", status: "Warning" },
-  { id: "2", title: "Simulasi Packet Tracer", course: "TLJ", due: "Tomorrow, 12:00", status: "Normal" },
-];
+  // Fetch enrolled courses (via class_id)
+  const { data: courses } = await supabase
+    .from("courses")
+    .select("id, title, description, subjects(name, category)")
+    .eq("class_id", profile?.class_id ?? "")
+    .limit(4);
 
-const RECENT_SCORES = [
-  { id: "1", title: "Quiz: Subnetting", score: 95, date: "2 days ago" },
-  { id: "2", title: "Tugas Instalasi Linux", score: 88, date: "1 week ago" },
-];
+  // Fetch pending assignments
+  const { data: pendingAssignments } = await supabase
+    .from("assignments")
+    .select("id, title, deadline, courses!inner(class_id)")
+    .eq("courses.class_id", profile?.class_id ?? "")
+    .gt("deadline", new Date().toISOString())
+    .order("deadline", { ascending: true })
+    .limit(3);
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 },
-  },
-};
-
-export default function StudentDashboard() {
-  const xpPercentage = (MOCK_USER.xp / MOCK_USER.nextLevelXp) * 100;
+  const firstName = profile?.full_name?.split(" ")[0] ?? "Siswa";
+  const className = (profile as any)?.classes?.name ?? "Belum ada kelas";
 
   return (
-    <motion.div 
-      className="space-y-6 max-w-7xl mx-auto"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* Hero Section */}
-      <motion.div variants={itemVariants} className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-secondary/30 p-8 shadow-sm">
-        <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
-          <Trophy className="w-64 h-64 text-primary" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center md:items-start justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back, {MOCK_USER.name}! 👋</h1>
-            <p className="text-muted-foreground text-lg">You have 2 pending assignments due soon. Keep up the good work!</p>
-            <div className="pt-4 flex gap-3">
-              <Button>
-                <PlayCircle className="mr-2 h-4 w-4" />
-                Resume Learning
-              </Button>
-              <Button variant="outline">View Calendar</Button>
-            </div>
-          </div>
-          
-          {/* Level / XP Widget */}
-          <div className="bg-card/60 backdrop-blur-md rounded-xl border p-5 shadow-sm min-w-[240px] flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="text-yellow-500 fill-yellow-500 w-5 h-5" />
-              <span className="font-bold text-lg">Level {MOCK_USER.level}</span>
-            </div>
-            
-            <div className="w-full relative h-3 bg-secondary rounded-full overflow-hidden mt-2 mb-1">
-              <motion.div 
-                className="absolute top-0 left-0 h-full bg-primary"
-                initial={{ width: 0 }}
-                animate={{ width: `${xpPercentage}%` }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-              />
-            </div>
-            
-            <div className="w-full flex justify-between text-xs text-muted-foreground mt-1">
-              <span>{MOCK_USER.xp} XP</span>
-              <span>{MOCK_USER.nextLevelXp} XP</span>
-            </div>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Welcome Banner */}
+      <div className="rounded-2xl bg-gradient-to-br from-primary/90 to-primary p-6 md:p-8 text-primary-foreground shadow-lg flex flex-col md:flex-row justify-between gap-6">
+        <div className="space-y-2">
+          <p className="text-primary-foreground/70 text-sm font-medium uppercase tracking-wider">Selamat datang kembali 👋</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{profile?.full_name ?? "Siswa"}</h1>
+          <p className="text-primary-foreground/80 text-sm">{className} &middot; {pendingAssignments?.length ?? 0} tugas menunggu</p>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Link href="/courses" className="inline-flex items-center gap-1.5 bg-white/20 hover:bg-white/30 transition-colors text-sm font-semibold px-3 py-1.5 rounded-lg">
+              <PlayCircle className="w-4 h-4" /> Mulai Belajar
+            </Link>
+            <Link href="/assignments" className="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 transition-colors text-sm px-3 py-1.5 rounded-lg">
+              <Clock className="w-4 h-4" /> Lihat Tugas
+            </Link>
           </div>
         </div>
-      </motion.div>
-
-      <div className="grid gap-6 md:grid-cols-12">
-        {/* Left Column (Courses & Progress) */}
-        <div className="md:col-span-8 space-y-6">
-          <motion.div variants={itemVariants}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold tracking-tight flex items-center">
-                <BookOpen className="w-5 h-5 mr-2 text-primary" />
-                Active Courses
-              </h2>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                View All <ChevronRight className="ml-1 w-4 h-4" />
-              </Button>
-            </div>
-            
-            <div className="grid gap-4 sm:grid-cols-2">
-              {ACTIVE_COURSES.map((course) => (
-                <Card key={course.id} className="group hover:border-primary/50 transition-colors cursor-pointer overflow-hidden relative">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-primary/80 scale-y-0 group-hover:scale-y-100 transition-transform origin-bottom" />
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-start justify-between">
-                      <span className="line-clamp-2">{course.title}</span>
-                      <course.icon className="w-4 h-4 text-muted-foreground shrink-0 mt-1" />
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mt-2 flex items-center justify-between text-sm mb-2">
-                      <span className="text-muted-foreground font-medium">{course.progress}% Completed</span>
-                    </div>
-                    <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-4">
-                      <div className="bg-primary h-full rounded-full" style={{ width: `${course.progress}%` }} />
-                    </div>
-                    <div className="bg-muted px-3 py-2 rounded-md flex items-center text-xs text-muted-foreground">
-                      <PlayCircle className="w-3 h-3 mr-2" />
-                      <span className="truncate">Next: {course.nextLesson}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Activity/Recent scores */}
-          <motion.div variants={itemVariants}>
-            <h2 className="text-xl font-semibold tracking-tight flex items-center mb-4">
-              <Zap className="w-5 h-5 mr-2 text-yellow-500" />
-              Recent Achievements
-            </h2>
-            <Card>
-              <CardContent className="p-0">
-                <div className="divide-y">
-                  {RECENT_SCORES.map((score) => (
-                    <div key={score.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500 font-bold">
-                          {score.score}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{score.title}</p>
-                          <p className="text-xs text-muted-foreground">{score.date}</p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-xs font-normal">Graded</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Right Column (Tasks & Notifications) */}
-        <div className="md:col-span-4 space-y-6">
-          <motion.div variants={itemVariants}>
-            <Card className="border-t-4 border-t-orange-500 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center">
-                  <Clock className="w-4 h-4 mr-2 text-orange-500" />
-                  Upcoming Tasks
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {ASSIGNMENTS.map((task) => (
-                  <div key={task.id} className="group relative border rounded-lg p-3 hover:border-primary/50 hover:bg-muted/20 transition-all">
-                    <div className="flex justify-between items-start mb-1">
-                      <Badge variant={task.status === "Warning" ? "destructive" : "secondary"} className="text-[10px] px-1.5 py-0">
-                        {task.course}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground font-medium">{task.due}</span>
-                    </div>
-                    <p className="text-sm font-medium mt-1 group-hover:text-primary transition-colors">{task.title}</p>
-                  </div>
-                ))}
-                
-                <Button variant="ghost" className="w-full text-xs" size="sm">
-                  View All Assignments
-                </Button>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Notifications Feed */}
-          <motion.div variants={itemVariants}>
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center">
-                  <Bell className="w-4 h-4 mr-2 text-primary" />
-                  Notifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 shrink-0 mt-0.5">
-                      <Trophy className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">You earned 'First Blood' badge!</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">2 hours ago</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 items-start">
-                    <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0 mt-0.5">
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">New module unlocked in ASJ</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">5 hours ago</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+        <div className="bg-white/10 rounded-xl p-5 min-w-[200px] space-y-3 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <Star className="w-5 h-5 fill-yellow-300 text-yellow-300" />
+            <span className="font-bold text-lg">Level {profile?.level ?? 1}</span>
+          </div>
+          <XPBar xp={profile?.xp ?? 0} level={profile?.level ?? 1} />
+          <div className="flex items-center gap-2 text-xs text-primary-foreground/70">
+            <Zap className="w-3.5 h-3.5 fill-yellow-300 text-yellow-300" />
+            {profile?.xp ?? 0} XP total
+          </div>
         </div>
       </div>
-    </motion.div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Active Courses */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Kursus Aktif</h2>
+            <Link href="/courses" className="text-sm text-primary hover:underline flex items-center gap-1">Lihat Semua <ChevronRight className="w-4 h-4" /></Link>
+          </div>
+
+          {(courses?.length ?? 0) === 0 ? (
+            <div className="rounded-xl border-2 border-dashed p-8 text-center text-muted-foreground">
+              <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-30" />
+              <p className="text-sm">Belum ada kursus untuk kelas Anda.</p>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-4">
+              {courses?.map((c: { id: string; title: string; description: string; subjects?: { name: string; code?: string; category?: string } | null }) => (
+                <Link key={c.id} href={`/courses/${c.id}`}
+                  className="group block rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition-all space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Activity className="w-5 h-5" />
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-primary font-semibold uppercase tracking-wider mb-1">{(c as any).subjects?.code}</p>
+                    <h3 className="font-bold text-sm leading-tight group-hover:text-primary transition-colors">{c.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{c.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Upcoming Assignments */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2"><Target className="w-5 h-5 text-orange-500" /> Tugas Mendatang</h2>
+          {(pendingAssignments?.length ?? 0) === 0 ? (
+            <div className="rounded-xl border-2 border-dashed p-6 text-center text-muted-foreground text-sm">
+              <Trophy className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              Tidak ada tugas tertunda. 🎉
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingAssignments?.map((a: { id: string; title: string; deadline?: string | null }) => {
+                const dl = a.deadline ? new Date(a.deadline) : null;
+                const isToday = dl && dl.toDateString() === new Date().toDateString();
+                return (
+                  <Link key={a.id} href={`/assignments/${a.id}`}
+                    className="block rounded-xl border bg-card p-4 hover:border-orange-500/40 hover:shadow-sm transition-all">
+                    <p className="font-semibold text-sm">{a.title}</p>
+                    {dl && (
+                      <p className={`text-xs mt-1 flex items-center gap-1 ${isToday ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                        <Clock className="w-3 h-3" />
+                        {isToday ? "Hari ini!" : dl.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" })}
+                      </p>
+                    )}
+                  </Link>
+                );
+              })}
+              <Link href="/assignments" className="block text-center text-sm text-primary hover:underline mt-2">
+                Lihat semua tugas →
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

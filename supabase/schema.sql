@@ -1,56 +1,84 @@
--- TJKT LMS Database Schema
+-- TJKT LMS Database Schema (Production)
+-- Run this first in Supabase SQL Editor
 
 -- Custom Types
-CREATE TYPE user_role AS ENUM ('admin', 'teacher', 'student');
-CREATE TYPE lesson_type AS ENUM ('video', 'pdf', 'text', 'terminal', 'quiz');
-CREATE TYPE submission_status AS ENUM ('pending', 'graded', 'late', 'missing');
-CREATE TYPE question_type AS ENUM ('mcq', 'essay');
-CREATE TYPE difficulty_level AS ENUM ('beginner', 'intermediate', 'advanced');
+DO $$ BEGIN
+  CREATE TYPE user_role AS ENUM ('admin', 'teacher', 'student');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN
+  CREATE TYPE lesson_type AS ENUM ('video', 'pdf', 'text', 'terminal', 'quiz');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN
+  CREATE TYPE submission_status AS ENUM ('pending', 'graded', 'late', 'missing');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN
+  CREATE TYPE question_type AS ENUM ('mcq', 'essay');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN
+  CREATE TYPE difficulty_level AS ENUM ('beginner', 'intermediate', 'advanced');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
--- Profiles
-CREATE TABLE profiles (
+-- System Settings (key-value store for admin-configurable values)
+CREATE TABLE IF NOT EXISTS system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Default settings
+INSERT INTO system_settings (key, value, description) VALUES
+  ('registration_open', 'true',  'Allow new student self-registration'),
+  ('current_school_year', '2025/2026', 'Active school year label'),
+  ('allow_student_class_select', 'true', 'Let students choose class during registration')
+ON CONFLICT (key) DO NOTHING;
+
+-- Academic Structure
+CREATE TABLE IF NOT EXISTS school_years (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT false
+);
+
+CREATE TABLE IF NOT EXISTS semesters (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    school_year_id UUID REFERENCES school_years(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    start_date DATE,
+    end_date DATE
+);
+
+CREATE TABLE IF NOT EXISTS classes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,        -- e.g. "XI TJKT 1"
+    grade_level INTEGER NOT NULL, -- 10, 11, or 12
+    school_year_id UUID REFERENCES school_years(id) ON DELETE RESTRICT,
+    UNIQUE(name, school_year_id)
+);
+
+CREATE TABLE IF NOT EXISTS subjects (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    code TEXT UNIQUE,
+    description TEXT,
+    category TEXT
+);
+
+-- Profiles (linked to auth.users)
+CREATE TABLE IF NOT EXISTS profiles (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
     role user_role DEFAULT 'student',
     avatar_url TEXT,
+    class_id UUID REFERENCES classes(id) ON DELETE SET NULL,
     xp INTEGER DEFAULT 0,
     level INTEGER DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Academic Structure
-CREATE TABLE school_years (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL, -- e.g. "2025/2026"
-    is_active BOOLEAN DEFAULT false
-);
-
-CREATE TABLE semesters (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    school_year_id UUID REFERENCES school_years(id) ON DELETE CASCADE,
-    name TEXT NOT NULL, -- "Odd", "Even"
-    start_date DATE,
-    end_date DATE
-);
-
-CREATE TABLE classes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL, -- e.g. "X TJKT 1"
-    grade_level INTEGER NOT NULL,
-    school_year_id UUID REFERENCES school_years(id) ON DELETE RESTRICT
-);
-
-CREATE TABLE subjects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    code TEXT UNIQUE,
-    description TEXT,
-    category TEXT -- e.g. "Networking", "Hardware", "Security"
-);
-
 -- Courses & Content
-CREATE TABLE courses (
+CREATE TABLE IF NOT EXISTS courses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     subject_id UUID REFERENCES subjects(id),
     class_id UUID REFERENCES classes(id),
@@ -62,24 +90,24 @@ CREATE TABLE courses (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE modules (
+CREATE TABLE IF NOT EXISTS modules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     order_index INTEGER NOT NULL
 );
 
-CREATE TABLE lessons (
+CREATE TABLE IF NOT EXISTS lessons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     module_id UUID REFERENCES modules(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     content_type lesson_type NOT NULL,
-    content_data JSONB, -- stores text, url, or terminal config depending on type
+    content_data JSONB,
     order_index INTEGER NOT NULL,
     is_locked BOOLEAN DEFAULT false
 );
 
-CREATE TABLE lesson_progress (
+CREATE TABLE IF NOT EXISTS lesson_progress (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
@@ -88,7 +116,7 @@ CREATE TABLE lesson_progress (
 );
 
 -- Assignments & Grading
-CREATE TABLE assignments (
+CREATE TABLE IF NOT EXISTS assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
     teacher_id UUID REFERENCES profiles(id),
@@ -98,7 +126,7 @@ CREATE TABLE assignments (
     max_score INTEGER DEFAULT 100
 );
 
-CREATE TABLE submissions (
+CREATE TABLE IF NOT EXISTS submissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     assignment_id UUID REFERENCES assignments(id) ON DELETE CASCADE,
     student_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
@@ -111,28 +139,28 @@ CREATE TABLE submissions (
     UNIQUE(assignment_id, student_id)
 );
 
-CREATE TABLE quizzes (
+CREATE TABLE IF NOT EXISTS quizzes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
-    lesson_id UUID REFERENCES lessons(id) ON DELETE SET NULL, -- optional link to a lesson
+    lesson_id UUID REFERENCES lessons(id) ON DELETE SET NULL,
     title TEXT NOT NULL,
-    time_limit INTEGER, -- in minutes
+    time_limit INTEGER,
     randomize BOOLEAN DEFAULT false,
     passing_score INTEGER DEFAULT 70
 );
 
-CREATE TABLE quiz_questions (
+CREATE TABLE IF NOT EXISTS quiz_questions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
     type question_type NOT NULL,
     question TEXT NOT NULL,
-    options JSONB, -- Array of strings for MCQ
-    correct_answer TEXT, -- Index or string value for MCQ
+    options JSONB,
+    correct_answer TEXT,
     points INTEGER DEFAULT 10,
     order_index INTEGER NOT NULL
 );
 
-CREATE TABLE quiz_attempts (
+CREATE TABLE IF NOT EXISTS quiz_attempts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
     student_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
@@ -142,18 +170,8 @@ CREATE TABLE quiz_attempts (
     completed_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE TABLE grades (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
-    assignment_avg DECIMAL(5,2),
-    quiz_avg DECIMAL(5,2),
-    final_grade DECIMAL(5,2),
-    UNIQUE(student_id, course_id)
-);
-
 -- Gamification
-CREATE TABLE badges (
+CREATE TABLE IF NOT EXISTS badges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     description TEXT,
@@ -162,7 +180,7 @@ CREATE TABLE badges (
     category TEXT
 );
 
-CREATE TABLE student_badges (
+CREATE TABLE IF NOT EXISTS student_badges (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     badge_id UUID REFERENCES badges(id) ON DELETE CASCADE,
@@ -170,41 +188,28 @@ CREATE TABLE student_badges (
     UNIQUE(student_id, badge_id)
 );
 
-CREATE TABLE skills (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name TEXT NOT NULL,
-    category TEXT
-);
-
-CREATE TABLE student_skills (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    skill_id UUID REFERENCES skills(id) ON DELETE CASCADE,
-    score INTEGER DEFAULT 0,
-    UNIQUE(student_id, skill_id)
-);
-
 -- Troubleshooting Scenarios
-CREATE TABLE troubleshooting_scenarios (
+CREATE TABLE IF NOT EXISTS troubleshooting_scenarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     difficulty difficulty_level DEFAULT 'beginner',
     xp_reward INTEGER DEFAULT 50,
-    network_topology JSONB -- stores topology configuration for UI
+    network_topology JSONB
 );
 
-CREATE TABLE scenario_attempts (
+-- Discussions
+CREATE TABLE IF NOT EXISTS discussions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    scenario_id UUID REFERENCES troubleshooting_scenarios(id) ON DELETE CASCADE,
-    student_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    solution JSONB,
-    score INTEGER,
-    completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    parent_id UUID REFERENCES discussions(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Communication & Notifications
-CREATE TABLE notifications (
+-- Notifications
+CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
@@ -214,22 +219,71 @@ CREATE TABLE notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE TABLE discussions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-    parent_id UUID REFERENCES discussions(id) ON DELETE CASCADE, -- null if top level
-    content TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- ======================================================
+-- TRIGGER: auto-create profile when auth user is created
+-- ======================================================
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
+    COALESCE((NEW.raw_user_meta_data->>'role')::user_role, 'student')
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ROW LEVEL SECURITY (RLS) policies --
--- Enabling RLS
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE handle_new_user();
+
+-- ======================================================
+-- ROW LEVEL SECURITY
+-- ======================================================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
--- More RLS policies will be defined as needed per role.
+ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE lesson_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE discussions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
 
--- Example Policies
-CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+-- Profiles
+DROP POLICY IF EXISTS "profiles_select" ON profiles;
+CREATE POLICY "profiles_select" ON profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "profiles_insert_own" ON profiles;
+CREATE POLICY "profiles_insert_own" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+DROP POLICY IF EXISTS "profiles_update_own" ON profiles;
+CREATE POLICY "profiles_update_own" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- System settings (readable by all authenticated, only admin can update)
+DROP POLICY IF EXISTS "settings_select" ON system_settings;
+CREATE POLICY "settings_select" ON system_settings FOR SELECT USING (true);
+
+-- Submissions (student can see own, teacher can see for their courses)
+DROP POLICY IF EXISTS "submissions_select" ON submissions;
+CREATE POLICY "submissions_select" ON submissions FOR SELECT
+  USING (student_id = auth.uid() OR EXISTS (
+    SELECT 1 FROM courses c JOIN assignments a ON a.course_id = c.id
+    WHERE a.id = assignment_id AND c.teacher_id = auth.uid()
+  ));
+DROP POLICY IF EXISTS "submissions_insert" ON submissions;
+CREATE POLICY "submissions_insert" ON submissions FOR INSERT WITH CHECK (student_id = auth.uid());
+
+-- Lesson progress
+DROP POLICY IF EXISTS "progress_select" ON lesson_progress;
+CREATE POLICY "progress_select" ON lesson_progress FOR SELECT USING (student_id = auth.uid());
+DROP POLICY IF EXISTS "progress_insert" ON lesson_progress;
+CREATE POLICY "progress_insert" ON lesson_progress FOR INSERT WITH CHECK (student_id = auth.uid());
+
+-- Notifications
+DROP POLICY IF EXISTS "notif_select" ON notifications;
+CREATE POLICY "notif_select" ON notifications FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "notif_update" ON notifications;
+CREATE POLICY "notif_update" ON notifications FOR UPDATE USING (user_id = auth.uid());

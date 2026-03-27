@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { Footer } from "@/components/layout/footer";
 import { getUserProfile, getUserSession } from "@/lib/auth";
 
 export default async function DashboardLayout({
@@ -22,6 +23,7 @@ export default async function DashboardLayout({
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           {children}
         </main>
+        <Footer />
       </div>
     </div>
   );
