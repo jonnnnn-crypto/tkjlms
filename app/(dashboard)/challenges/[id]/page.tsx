@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TerminalSimulator } from "@/components/terminal/terminal-simulator";
-import { ShieldAlert, Zap, Clock, ChevronLeft, Target, PlayCircle, CheckCircle2 } from "lucide-react";
+import { ShieldAlert, Trophy, Zap, Clock, ChevronLeft, Target, PlayCircle, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
