@@ -95,7 +95,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">
-              {courses?.map((c: { id: string; title: string; description: string; subjects?: { name: string; code?: string; category?: string } | null }) => (
+              {courses?.map((c: { id: string; title: string; description: string; subjects?: { name: string; code?: string; category?: string }[] | null }) => (
                 <Link key={c.id} href={`/courses/${c.id}`}
                   className="group block rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-md transition-all space-y-3">
                   <div className="flex items-start justify-between">

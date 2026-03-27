@@ -64,7 +64,7 @@ export default async function LeaderboardPage() {
                 {(leaders?.length ?? 0) === 0 && (
                   <p className="text-center text-sm text-muted-foreground py-12">Belum ada data siswa.</p>
                 )}
-                {leaders?.map((u: { id: string; full_name: string; xp: number; level: number; role: string; classes?: {name: string} | null }, i: number) => (
+                {leaders?.map((u: { id: string; full_name: string; xp: number; level: number; role: string; classes?: { name: string }[] | null }, i: number) => (
                   <div key={u.id}
                     className={`flex items-center justify-between p-4 transition-colors hover:bg-muted/40 ${u.id === user?.id ? "bg-primary/5 border-l-2 border-primary" : ""} ${i < 3 ? "bg-primary/5" : ""}`}>
                     <div className="flex items-center gap-4">
