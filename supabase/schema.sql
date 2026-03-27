@@ -287,3 +287,11 @@ DROP POLICY IF EXISTS "notif_select" ON notifications;
 CREATE POLICY "notif_select" ON notifications FOR SELECT USING (user_id = auth.uid());
 DROP POLICY IF EXISTS "notif_update" ON notifications;
 CREATE POLICY "notif_update" ON notifications FOR UPDATE USING (user_id = auth.uid());
+
+-- ======================================================
+-- EXPLICIT ADMIN ASSIGNMENT
+-- ======================================================
+-- Ensures that the specified UUID becomes an Admin during execution or subsequent updates
+UPDATE public.profiles 
+SET role = 'admin' 
+WHERE id = 'f018f229-5c7b-48e9-81f4-8d8402b86075';

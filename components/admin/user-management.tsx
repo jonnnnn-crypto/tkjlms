@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Users, BookOpen, GraduationCap, ShieldAlert, Activity,
-  UserPlus, Server, X, Loader2, Eye, EyeOff, Trash2
+  UserPlus, Server, X, Loader2, Eye, EyeOff, Trash2, Edit2
 } from "lucide-react";
 
 interface UserRow {
@@ -30,10 +30,33 @@ export default function AdminDashboard({ users: initialUsers, stats }: AdminPage
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editRoleUser, setEditRoleUser] = useState<UserRow | null>(null);
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [form, setForm] = useState({ full_name: "", email: "", password: "", role: "teacher" as "teacher" | "admin" });
+
+  const handleUpdateRole = async (userId: string, newRole: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/update-role", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole as any } : u));
+      setSuccess(`Role berhasil diperbarui!`);
+      setEditRoleUser(null);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -182,6 +205,12 @@ export default function AdminDashboard({ users: initialUsers, stats }: AdminPage
                     </Badge>
                     <span className="text-xs text-muted-foreground hidden md:block">{user.xp} XP · Lv.{user.level}</span>
                     <Button
+                      variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted"
+                      onClick={() => setEditRoleUser(user)}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
                       variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
                       onClick={() => handleDelete(user.id, user.full_name)}
                       disabled={deleteId === user.id}
@@ -265,6 +294,54 @@ export default function AdminDashboard({ users: initialUsers, stats }: AdminPage
                 {loading ? "Membuat Akun..." : `Buat Akun ${form.role === "teacher" ? "Guru" : "Admin"}`}
               </Button>
             </form>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Edit Role Modal */}
+      {editRoleUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setEditRoleUser(null)}>
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="w-full max-w-sm bg-card border rounded-2xl shadow-2xl p-6 space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">Ubah Hak Akses</h2>
+                <p className="text-sm text-muted-foreground mt-1">Mengubah role untuk <strong>{editRoleUser.full_name}</strong></p>
+              </div>
+              <button onClick={() => setEditRoleUser(null)} className="p-2 rounded-lg hover:bg-muted transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <Button 
+                variant={editRoleUser.role === "student" ? "secondary" : "outline"}
+                className="w-full justify-start h-12"
+                onClick={() => handleUpdateRole(editRoleUser.id, "student")}
+                disabled={loading || editRoleUser.role === "student"}
+              >
+                👤 Jadikan Siswa (Default)
+              </Button>
+              <Button 
+                variant={editRoleUser.role === "teacher" ? "default" : "outline"}
+                className="w-full justify-start h-12"
+                onClick={() => handleUpdateRole(editRoleUser.id, "teacher")}
+                disabled={loading || editRoleUser.role === "teacher"}
+              >
+                👨‍🏫 Jadikan Guru
+              </Button>
+              <Button 
+                variant={editRoleUser.role === "admin" ? "destructive" : "outline"}
+                className="w-full justify-start h-12"
+                onClick={() => handleUpdateRole(editRoleUser.id, "admin")}
+                disabled={loading || editRoleUser.role === "admin"}
+              >
+                🛡️ Jadikan Admin
+              </Button>
+            </div>
           </motion.div>
         </div>
       )}
