@@ -93,8 +93,8 @@ export default function LoginPage() {
             <label className="text-sm font-medium leading-none" htmlFor="password">
               Password
             </label>
-            <Link href="#" className="text-sm font-medium text-primary hover:underline">
-              Forgot password?
+            <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+              Lupa password?
             </Link>
           </div>
           <div className="relative">

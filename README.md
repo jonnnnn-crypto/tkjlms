@@ -10,13 +10,17 @@ Karena aplikasi ini siap untuk tahap produksi, fitur otentikasi (Google OAuth & 
 ### 1. Pengaturan Google OAuth (SSO)
 Google Login dikhususkan untuk **Siswa**.
 
+> [!CAUTION]
+> **PENTING UNTUK MENGHINDARI `Error 400: redirect_uri_mismatch`!**
+> URL Redirect yang Anda masukkan di Google Cloud Console **HARUS SAMA PERSIS** dengan URL Supabase Anda. Anda **TIDAK MUNGKIN** menggunakan `localhost` ataupun domain web Vercel Anda di dalam pengaturan Google Console. Google Console HANYA berkomunikasi ke Supabase.
+
 1. Buka [Google Cloud Console](https://console.cloud.google.com/).
 2. Buat project baru (misal: "TJKT LMS Auth").
 3. Buka **APIs & Services > Credentials** > **Create Credentials > OAuth client ID**.
 4. Pilih **Web application**.
-5. Di bagian **Authorized redirect URIs**, masukkan Supabase Callback URL Anda:
-   - FORMAT: `https://<PROJECT_ID>.supabase.co/auth/v1/callback`
-   - *(Contoh: `https://fbfdasaegmxnsyhrodqu.supabase.co/auth/v1/callback`)*
+5. Di bagian **Authorized redirect URIs**, masukkan Supabase Callback URL spesifik project Anda:
+   - **MASUKKAN COPY-PASTE (INI SAJA, TIDAK ADA YANG LAIN):** 
+   - `https://fbfdasaegmxnsyhrodqu.supabase.co/auth/v1/callback`
 6. Simpan, lalu salin **Client ID** dan **Client Secret**.
 7. Buka [Supabase Dashboard](https://supabase.com/dashboard).
 8. Masuk ke **Authentication > Providers > Google**.
