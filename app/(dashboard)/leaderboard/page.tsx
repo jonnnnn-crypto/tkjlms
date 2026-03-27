@@ -3,6 +3,7 @@
 import { motion, Variants } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Trophy, Medal, Star, Shield, Zap, TrendingUp, Hexagon } from "lucide-react";
 
 // Mock Leaderboard Data
