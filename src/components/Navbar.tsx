@@ -1,15 +1,16 @@
 import Link from 'next/link'
 import { logout } from '@/app/actions/auth'
 import type { Profile } from '@/lib/types'
+import { IconCog, IconSchool, IconBook } from '@/components/Icons'
 
 interface NavbarProps {
   profile: Profile
 }
 
-const ROLE_CONFIG: Record<string, { label: string; class: string; icon: string }> = {
-  admin:   { label: 'Admin',   class: 'tag-red',    icon: '⚡' },
-  teacher: { label: 'Guru',    class: 'tag-cyan',   icon: '👨‍🏫' },
-  student: { label: 'Siswa',   class: 'tag-indigo', icon: '🎓' },
+const ROLE_CONFIG: Record<string, { label: string; class: string; icon: React.ReactNode }> = {
+  admin:   { label: 'Admin',   class: 'tag-red',    icon: <IconCog className="h-3 w-3" /> },
+  teacher: { label: 'Guru',    class: 'tag-cyan',   icon: <IconSchool className="h-3 w-3" /> },
+  student: { label: 'Siswa',   class: 'tag-indigo', icon: <IconBook className="h-3 w-3" /> },
 }
 
 export default function Navbar({ profile }: NavbarProps) {

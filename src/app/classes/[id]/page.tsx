@@ -5,6 +5,10 @@ import Navbar           from '@/components/Navbar'
 import Sidebar          from '@/components/Sidebar'
 import Link             from 'next/link'
 import type { Metadata } from 'next'
+import {
+  IconBook, IconVideoCamera, IconDocumentText, IconLink,
+  IconPhoto, IconClipboardDocument, IconBeaker
+} from '@/components/Icons'
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -15,12 +19,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: data?.name ?? 'Detail Kelas' }
 }
 
-const TYPE_ICON: Record<string, { icon: string; color: string }> = {
-  text:  { icon: '📄', color: 'bg-indigo-500/15 text-indigo-400' },
-  video: { icon: '🎬', color: 'bg-red-500/15 text-red-400' },
-  pdf:   { icon: '📕', color: 'bg-orange-500/15 text-orange-400' },
-  link:  { icon: '🔗', color: 'bg-cyan-500/15 text-cyan-400' },
-  slide: { icon: '🖼️', color: 'bg-violet-500/15 text-violet-400' },
+const TYPE_ICON: Record<string, { icon: React.ReactNode; color: string }> = {
+  text:  { icon: <IconDocumentText />, color: 'bg-indigo-500/15 text-indigo-400' },
+  video: { icon: <IconVideoCamera />, color: 'bg-red-500/15 text-red-400' },
+  pdf:   { icon: <IconBook />, color: 'bg-orange-500/15 text-orange-400' },
+  link:  { icon: <IconLink />, color: 'bg-cyan-500/15 text-cyan-400' },
+  slide: { icon: <IconPhoto />, color: 'bg-violet-500/15 text-violet-400' },
 }
 
 const DIFF_CONFIG: Record<string, { label: string; class: string }> = {
@@ -167,14 +171,14 @@ export default async function ClassDetailPage({ params }: Props) {
               {/* Materials */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-sm font-black uppercase tracking-widest text-slate-600">
-                    📖 Materi Pembelajaran ({materials?.length ?? 0})
+                  <h2 className="text-sm font-black uppercase tracking-widest text-slate-600 flex items-center gap-1.5">
+                    <IconBook className="h-4 w-4" /> Materi Pembelajaran ({materials?.length ?? 0})
                   </h2>
                 </div>
 
                 {(materials ?? []).length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-white/[0.07] py-12 text-center">
-                    <p className="text-4xl mb-3">📚</p>
+                  <div className="rounded-2xl border border-dashed border-white/[0.07] py-12 text-center flex flex-col items-center justify-center">
+                    <div className="mb-3"><IconBook className="h-10 w-10 text-slate-500" /></div>
                     <p className="text-sm font-semibold text-slate-400 mb-1">Belum ada materi</p>
                     <p className="text-xs text-slate-600">
                       {isTeacher ? 'Klik "+ Tambah Materi" untuk mulai.' : 'Guru belum menambahkan materi.'}
@@ -217,13 +221,13 @@ export default async function ClassDetailPage({ params }: Props) {
 
               {/* Quizzes */}
               <div>
-                <h2 className="text-sm font-black uppercase tracking-widest text-slate-600 mb-3">
-                  📝 Quiz ({quizzes?.length ?? 0})
+                <h2 className="text-sm font-black uppercase tracking-widest text-slate-600 mb-3 flex items-center gap-1.5">
+                  <IconClipboardDocument className="h-4 w-4" /> Quiz ({quizzes?.length ?? 0})
                 </h2>
 
                 {(quizzes ?? []).length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/[0.07] py-8 text-center">
-                    <p className="text-3xl mb-2">📝</p>
+                  <div className="rounded-xl border border-dashed border-white/[0.07] py-8 text-center flex flex-col items-center justify-center">
+                    <div className="mb-3"><IconClipboardDocument className="h-8 w-8 text-slate-500" /></div>
                     <p className="text-xs text-slate-600">Belum ada quiz.</p>
                   </div>
                 ) : (
@@ -269,13 +273,13 @@ export default async function ClassDetailPage({ params }: Props) {
 
               {/* Labs */}
               <div>
-                <h2 className="text-sm font-black uppercase tracking-widest text-slate-600 mb-3">
-                  🧪 Lab Simulasi ({labs?.length ?? 0})
+                <h2 className="text-sm font-black uppercase tracking-widest text-slate-600 mb-3 flex items-center gap-1.5">
+                  <IconBeaker className="h-4 w-4" /> Lab Simulasi ({labs?.length ?? 0})
                 </h2>
 
                 {(labs ?? []).length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/[0.07] py-8 text-center">
-                    <p className="text-3xl mb-2">🧪</p>
+                  <div className="rounded-xl border border-dashed border-white/[0.07] py-8 text-center flex flex-col items-center justify-center">
+                    <div className="mb-3"><IconBeaker className="h-8 w-8 text-slate-500" /></div>
                     <p className="text-xs text-slate-600">Belum ada lab.</p>
                   </div>
                 ) : (

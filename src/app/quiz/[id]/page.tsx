@@ -6,6 +6,7 @@ import { createClient }                        from '@/lib/supabase/client'
 import { submitQuiz }                          from '@/app/actions/quiz'
 import ProgressBar                             from '@/components/ProgressBar'
 import Link                                    from 'next/link'
+import { IconCheckCircle, IconClock, IconStar, IconBook } from '@/components/Icons'
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -108,8 +109,8 @@ export default function QuizPage({ params }: Props) {
   if (existing) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0d0f14] px-4">
       <div className="max-w-md w-full text-center">
-        <div className="rounded-2xl border border-white/[0.08] bg-[#13161d] p-8">
-          <p className="text-5xl mb-4">✅</p>
+        <div className="rounded-2xl border border-white/[0.08] bg-[#13161d] p-8 flex flex-col items-center">
+          <IconCheckCircle className="h-14 w-14 text-green-400 mb-4" />
           <h1 className="text-xl font-bold mb-2">{quiz?.title}</h1>
           <p className="text-slate-400 mb-6">Kamu sudah mengerjakan quiz ini.</p>
           <div className="flex items-center justify-center gap-2 mb-6">
@@ -133,8 +134,8 @@ export default function QuizPage({ params }: Props) {
   if (result) return (
     <div className="min-h-screen flex items-center justify-center bg-[#0d0f14] px-4">
       <div className="max-w-md w-full text-center">
-        <div className="rounded-2xl border border-white/[0.08] bg-[#13161d] p-8 animate-fade-up">
-          <p className="text-6xl mb-4">{result.score >= 70 ? '🎉' : '💪'}</p>
+        <div className="rounded-2xl border border-white/[0.08] bg-[#13161d] p-8 animate-fade-up flex flex-col items-center">
+          {result.score >= 70 ? <IconStar className="h-16 w-16 text-yellow-400 mb-4" /> : <IconBook className="h-16 w-16 text-indigo-400 mb-4" />}
           <h1 className="text-xl font-bold mb-1">Quiz Selesai!</h1>
           <p className="text-slate-400 mb-6">{quiz?.title}</p>
           <div className="rounded-xl bg-white/[0.04] p-6 mb-6">
@@ -168,8 +169,8 @@ export default function QuizPage({ params }: Props) {
             <p className="font-bold text-slate-200">{quiz?.title}</p>
             <p className="text-xs text-slate-500">{quiz?.classes?.name}</p>
           </div>
-          <div className={`font-mono font-bold text-lg ${timeLeft < 120 ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>
-            ⏱ {fmt(timeLeft)}
+          <div className={`font-mono font-bold text-lg flex items-center gap-1.5 ${timeLeft < 120 ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>
+            <IconClock className="h-5 w-5" /> {fmt(timeLeft)}
           </div>
         </div>
       </div>

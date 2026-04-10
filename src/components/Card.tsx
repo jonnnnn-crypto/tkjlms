@@ -21,7 +21,7 @@ export default function Card({ children, className = '', hover = true }: CardPro
 }
 
 interface StatCardProps {
-  icon: string
+  icon: React.ReactNode
   label: string
   value: string | number
   sub?: string
@@ -39,7 +39,9 @@ export function StatCard({ icon, label, value, sub }: StatCardProps) {
           <p className="text-3xl font-extrabold text-gradient leading-none">{value}</p>
           {sub && <p className="text-xs text-slate-600 mt-1.5">{sub}</p>}
         </div>
-        <span className="text-2xl opacity-80">{icon}</span>
+        <div className="text-indigo-400 opacity-80 h-7 w-7">
+          {icon}
+        </div>
       </div>
     </div>
   )

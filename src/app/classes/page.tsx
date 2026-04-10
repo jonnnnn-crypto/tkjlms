@@ -6,6 +6,7 @@ import { JoinClassForm }   from '@/components/JoinClassForm'
 import { CreateClassForm } from '@/components/CreateClassForm'
 import Link                from 'next/link'
 import type { Metadata }   from 'next'
+import { IconBook, IconSchool, IconSignal } from '@/components/Icons'
 
 export const metadata: Metadata = { title: 'Kelas — NetLearnX' }
 
@@ -58,8 +59,8 @@ export default async function ClassesPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-7">
             <div>
-              <h1 className="text-2xl font-extrabold text-white">
-                {profile.role === 'student' ? '📚 Kelas Saya' : '🏫 Kelola Kelas'}
+              <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+                {profile.role === 'student' ? <><IconBook className="h-6 w-6 text-indigo-400" /> Kelas Saya</> : <><IconSchool className="h-6 w-6 text-cyan-400" /> Kelola Kelas</>}
               </h1>
               <p className="text-slate-500 text-sm mt-0.5">
                 {classes.length > 0
@@ -74,8 +75,10 @@ export default async function ClassesPage() {
 
           {/* Grid */}
           {classes.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/[0.08] py-20 text-center">
-              <p className="text-5xl mb-4">{profile.role === 'student' ? '📚' : '🏫'}</p>
+            <div className="rounded-2xl border border-dashed border-white/[0.08] py-20 text-center flex flex-col items-center justify-center">
+              <div className="mb-4">
+                {profile.role === 'student' ? <IconBook className="h-12 w-12 text-slate-500" /> : <IconSchool className="h-12 w-12 text-slate-500" />}
+              </div>
               <p className="font-bold text-slate-300 text-lg mb-1">
                 {profile.role === 'student' ? 'Belum bergabung ke kelas' : 'Buat kelas pertamamu!'}
               </p>
@@ -96,7 +99,7 @@ export default async function ClassesPage() {
                       {/* Header */}
                       <div className="flex items-start justify-between gap-2 mb-4">
                         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.08] text-2xl flex-shrink-0">
-                          📡
+                          <IconSignal className="h-5 w-5 text-white/70" />
                         </div>
                         <div className="text-right">
                           <span className="font-mono text-[0.65rem] font-bold tracking-wider text-slate-500 bg-white/[0.06] px-2 py-0.5 rounded-md">

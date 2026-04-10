@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react'
 import { createClient }        from '@/lib/supabase/client'
 import Link                    from 'next/link'
+import {
+  IconBeaker, IconClipboardDocument, IconSignal, IconMonitor,
+  IconArrowsRightLeft, IconGlobeAlt, IconCog, IconCheckCircle, IconXCircle
+} from '@/components/Icons'
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -143,7 +147,7 @@ export default function LabPage({ params }: Props) {
       {/* Header */}
       <div className="border-b border-white/[0.07] bg-[#0d0f14]/90 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🧪</span>
+          <IconBeaker className="h-8 w-8 text-cyan-400" />
           <div>
             <p className="font-bold text-slate-200">{lab.title}</p>
             <p className="text-xs text-cyan-400">Simulasi Jaringan — TJKT</p>
@@ -164,7 +168,7 @@ export default function LabPage({ params }: Props) {
         {lab.config?.instructions && (
           <div className="rounded-xl border border-white/[0.07] bg-[#13161d] p-5 mb-6">
             <h2 className="font-bold text-slate-200 mb-2 flex items-center gap-2">
-              📋 Instruksi Lab
+              <IconClipboardDocument className="h-5 w-5 text-indigo-400" /> Instruksi Lab
             </h2>
             <p className="text-sm text-slate-400 whitespace-pre-line">{lab.config.instructions}</p>
           </div>
@@ -173,20 +177,20 @@ export default function LabPage({ params }: Props) {
         {/* Network Topology Visual */}
         <div className="rounded-2xl border border-white/[0.07] bg-[#13161d] p-6 mb-6">
           <h2 className="font-bold text-slate-200 mb-4 flex items-center gap-2">
-            🖧 Topologi Jaringan
+            <IconSignal className="h-5 w-5 text-cyan-400" /> Topologi Jaringan
           </h2>
           <div className="flex items-center justify-center gap-4 py-4 overflow-x-auto">
             {[
-              { icon: '💻', label: 'PC Kamu' },
+              { icon: <IconMonitor className="h-6 w-6" />, label: 'PC Kamu' },
               { icon: '——', label: '' },
-              { icon: '🔀', label: 'Switch' },
+              { icon: <IconArrowsRightLeft className="h-6 w-6" />, label: 'Switch' },
               { icon: '——', label: '' },
-              { icon: '📡', label: 'Router/Gateway' },
+              { icon: <IconSignal className="h-6 w-6" />, label: 'Router/Gateway' },
               { icon: '——', label: '' },
-              { icon: '🌐', label: 'Internet' },
+              { icon: <IconGlobeAlt className="h-6 w-6" />, label: 'Internet' },
             ].map((n, i) => (
               <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
-                <span className="text-2xl">{n.icon}</span>
+                <div className="text-slate-400">{n.icon}</div>
                 {n.label && <span className="text-xs text-slate-500">{n.label}</span>}
               </div>
             ))}
@@ -196,7 +200,7 @@ export default function LabPage({ params }: Props) {
         {/* Config Form */}
         <div className="rounded-2xl border border-white/[0.07] bg-[#13161d] p-6 mb-6">
           <h2 className="font-bold text-slate-200 mb-4 flex items-center gap-2">
-            ⚙️ Konfigurasi IP
+            <IconCog className="h-5 w-5 text-indigo-400" /> Konfigurasi IP
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {[
@@ -230,7 +234,7 @@ export default function LabPage({ params }: Props) {
                 Melakukan Ping Test...
               </span>
             ) : (
-              '🔌 Ping Test — Cek Koneksi'
+              <span className="flex items-center justify-center gap-2"><IconSignal className="h-5 w-5" /> Ping Test — Cek Koneksi</span>
             )}
           </button>
         </div>
@@ -239,7 +243,7 @@ export default function LabPage({ params }: Props) {
         {pingResult && (
           <div className={`rounded-2xl border p-6 animate-fade-up ${pingResult.allOk ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">{pingResult.allOk ? '✅' : '❌'}</span>
+              {pingResult.allOk ? <IconCheckCircle className="h-10 w-10 text-green-400" /> : <IconXCircle className="h-10 w-10 text-red-400" />}
               <div>
                 <h2 className="font-bold text-slate-200">
                   {pingResult.allOk ? 'Koneksi Berhasil!' : 'Koneksi Gagal'}

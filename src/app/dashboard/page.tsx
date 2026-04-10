@@ -6,6 +6,10 @@ import Sidebar          from '@/components/Sidebar'
 import { StatCard }     from '@/components/Card'
 import ProgressBar      from '@/components/ProgressBar'
 import Link             from 'next/link'
+import {
+  IconBook, IconClipboardDocument, IconStar, IconSchool,
+  IconUsers, IconChartBar, IconCog, IconSignal
+} from '@/components/Icons'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -124,9 +128,9 @@ export default async function DashboardPage() {
             <div className="space-y-7">
               {/* Stats */}
               <div className="grid gap-4 sm:grid-cols-3">
-                <StatCard icon="📚" label="Kelas Diikuti"  value={enrolledClasses.length} sub="kelas aktif" />
-                <StatCard icon="📝" label="Quiz Selesai"   value={recentSubmissions.length} sub="soal dikerjakan" />
-                <StatCard icon="⭐" label="Rata-rata Nilai" value={`${avgScore}`} sub="dari 100 poin" />
+                <StatCard icon={<IconBook />} label="Kelas Diikuti"  value={enrolledClasses.length} sub="kelas aktif" />
+                <StatCard icon={<IconClipboardDocument />} label="Quiz Selesai"   value={recentSubmissions.length} sub="soal dikerjakan" />
+                <StatCard icon={<IconStar />} label="Rata-rata Nilai" value={`${avgScore}`} sub="dari 100 poin" />
               </div>
 
               {avgScore > 0 && (
@@ -151,7 +155,7 @@ export default async function DashboardPage() {
 
                   {enrolledClasses.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-white/[0.08] p-10 text-center">
-                      <p className="text-4xl mb-3">📚</p>
+                      <div className="flex justify-center mb-4"><IconBook className="h-10 w-10 text-slate-500" /></div>
                       <p className="text-sm font-semibold text-slate-400">Belum ada kelas</p>
                       <p className="text-xs text-slate-600 mt-1 mb-4">Masukkan kode dari guru untuk bergabung</p>
                       <Link href="/classes" className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 border border-indigo-500/25 px-3 py-2 rounded-lg">
@@ -164,7 +168,7 @@ export default async function DashboardPage() {
                         <Link key={cls.id} href={`/classes/${cls.id}`}>
                           <div className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-[#0d0f1a] px-4 py-3.5 hover:border-indigo-500/30 hover:bg-indigo-500/5 transition-all">
                             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/20 to-cyan-500/10 text-xl">
-                              📡
+                              <IconSignal className="h-5 w-5 text-indigo-400" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-slate-200 truncate">{cls.name}</p>
@@ -191,7 +195,7 @@ export default async function DashboardPage() {
 
                   {recentSubmissions.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-white/[0.08] p-8 text-center">
-                      <p className="text-3xl mb-2">📊</p>
+                      <div className="flex justify-center mb-3"><IconChartBar className="h-8 w-8 text-slate-500" /></div>
                       <p className="text-sm text-slate-500">Belum ada quiz dikerjakan</p>
                     </div>
                   ) : (
@@ -227,9 +231,9 @@ export default async function DashboardPage() {
           {profile.role === 'teacher' && (
             <div className="space-y-7">
               <div className="grid gap-4 sm:grid-cols-3">
-                <StatCard icon="🏫" label="Kelas Dibuat"  value={teacherClasses.length} sub="kelas aktif" />
-                <StatCard icon="👥" label="Total Siswa"   value={totalStudents} sub="terdaftar" />
-                <StatCard icon="📊" label="Aktivitas"     value="Aktif" sub="hari ini" />
+                <StatCard icon={<IconSchool />} label="Kelas Dibuat"  value={teacherClasses.length} sub="kelas aktif" />
+                <StatCard icon={<IconUsers />} label="Total Siswa"   value={totalStudents} sub="terdaftar" />
+                <StatCard icon={<IconChartBar />} label="Aktivitas"     value="Aktif" sub="hari ini" />
               </div>
 
               <div className="flex items-center justify-between mb-0">
@@ -244,7 +248,7 @@ export default async function DashboardPage() {
 
               {teacherClasses.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-white/[0.08] p-14 text-center">
-                  <p className="text-5xl mb-3">🏫</p>
+                  <div className="flex justify-center mb-4"><IconSchool className="h-12 w-12 text-slate-500" /></div>
                   <p className="font-semibold text-slate-400 mb-4">Belum ada kelas. Buat sekarang!</p>
                   <Link href="/classes" className="inline-flex items-center gap-1.5 text-sm font-bold text-cyan-400 border border-cyan-500/25 px-4 py-2.5 rounded-lg hover:bg-cyan-500/10 transition-colors">
                     + Buat Kelas Pertama
@@ -256,7 +260,7 @@ export default async function DashboardPage() {
                     <Link key={cls.id} href={`/classes/${cls.id}`}>
                       <div className="rounded-xl border border-white/[0.06] bg-[#0d0f1a] p-5 hover:border-cyan-500/30 hover:bg-cyan-500/5 transition-all hover:-translate-y-0.5 group">
                         <div className="flex items-start justify-between gap-2 mb-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/10 text-xl">📡</div>
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-indigo-500/10 text-xl"><IconSignal className="h-5 w-5 text-cyan-400" /></div>
                           <span className="text-xs font-mono text-slate-600 bg-white/[0.04] px-2 py-0.5 rounded-md">{cls.class_code}</span>
                         </div>
                         <p className="font-bold text-slate-200 mb-0.5">{cls.name}</p>
@@ -273,12 +277,12 @@ export default async function DashboardPage() {
           {profile.role === 'admin' && (
             <div className="space-y-7">
               <div className="grid gap-4 sm:grid-cols-3">
-                <StatCard icon="👥" label="Total Pengguna" value={adminStats.users} sub="akun terdaftar" />
-                <StatCard icon="🏫" label="Total Kelas"    value={adminStats.classes} sub="kelas aktif" />
-                <StatCard icon="📝" label="Total Submisi"  value={adminStats.submissions} sub="quiz dikerjakan" />
+                <StatCard icon={<IconUsers />} label="Total Pengguna" value={adminStats.users} sub="akun terdaftar" />
+                <StatCard icon={<IconSchool />} label="Total Kelas"    value={adminStats.classes} sub="kelas aktif" />
+                <StatCard icon={<IconClipboardDocument />} label="Total Submisi"  value={adminStats.submissions} sub="quiz dikerjakan" />
               </div>
               <div className="rounded-2xl border border-white/[0.07] bg-gradient-to-br from-indigo-500/8 to-cyan-500/5 p-8 text-center">
-                <p className="text-5xl mb-4">⚙️</p>
+                <div className="flex justify-center mb-4"><IconCog className="h-12 w-12 text-slate-400" /></div>
                 <p className="font-bold text-slate-200 text-lg">Panel Administrator</p>
                 <p className="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
                   Kelola semua pengguna, kelas, dan konten melalui navigasi di sidebar.
