@@ -1,91 +1,112 @@
-# TJKT Vocational LMS
-Learning Management System modern yang dirancang khusus untuk siswa kejuruan TJKT (Teknik Jaringan Komputer dan Telekomunikasi), menampilkan pembelajaran interaktif, simulator terminal, dan gamifikasi.
+# NetLearnX LMS
 
-## 🚀 Panduan Produksi: Konfigurasi Supabase Auth
+> Platform LMS modern untuk SMK Jurusan TJKT (Teknik Jaringan Komputer & Telekomunikasi)
 
-Karena aplikasi ini siap untuk tahap produksi, fitur otentikasi (Google OAuth & Email) harus dikonfigurasi secara presisi di Supabase Dashboard. Ikuti langkah-langkah wajib di bawah ini.
-
----
-
-### 1. Pengaturan Google OAuth (SSO)
-Google Login dikhususkan untuk **Siswa**.
-
-> [!CAUTION]
-> **PENTING UNTUK MENGHINDARI `Error 400: redirect_uri_mismatch`!**
-> URL Redirect yang Anda masukkan di Google Cloud Console **HARUS SAMA PERSIS** dengan URL Supabase Anda. Anda **TIDAK MUNGKIN** menggunakan `localhost` ataupun domain web Vercel Anda di dalam pengaturan Google Console. Google Console HANYA berkomunikasi ke Supabase.
-
-1. Buka [Google Cloud Console](https://console.cloud.google.com/).
-2. Buat project baru (misal: "TJKT LMS Auth").
-3. Buka **APIs & Services > Credentials** > **Create Credentials > OAuth client ID**.
-4. Pilih **Web application**.
-5. Di bagian **Authorized redirect URIs**, masukkan Supabase Callback URL spesifik project Anda:
-   - **MASUKKAN COPY-PASTE (INI SAJA, TIDAK ADA YANG LAIN):** 
-   - `https://fbfdasaegmxnsyhrodqu.supabase.co/auth/v1/callback`
-6. Simpan, lalu salin **Client ID** dan **Client Secret**.
-7. Buka [Supabase Dashboard](https://supabase.com/dashboard).
-8. Masuk ke **Authentication > Providers > Google**.
-9. Aktifkan (Enable) toggle, masukkan **Client ID** dan **Client Secret** tadi. Set "Skip nonce check" ke `OFF`.
-10. Simpan.
+![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase)
+![Tailwind](https://img.shields.io/badge/Tailwind-v4-0EA5E9?style=for-the-badge&logo=tailwindcss)
 
 ---
 
-### 2. URL Configuration (Redirect URLs)
-Supabase butuh tahu ke mana harus mengarahkan user setelah berhasil login atau klik link email.
+## 🚀 Fitur Utama
 
-1. Di Supabase Dashboard, buka **Authentication > URL Configuration**.
-2. **Site URL**: Masukkan URL utama website produksi Anda (Contoh: `https://lms.smkn1liwa.sch.id`).
-3. **Redirect URLs**: Tambahkan path callback spesifik untuk Next.js App Router agar OAuth bisa me-refresh sesi.
-   - Tambahkan: `https://lms.smkn1liwa.sch.id/api/auth/callback`
-   - Tambahkan juga URL localhost untuk testing: `http://localhost:3000/api/auth/callback`
+| Fitur | Deskripsi |
+|---|---|
+| **Role-Based Access** | Admin, Guru, Siswa dengan hak akses berbeda |
+| **Kelas Digital** | Guru buat kelas + kode unik, siswa join instan |
+| **Materi** | Teks (markdown), video, PDF, link, slide |
+| **Quiz Otomatis** | Pilihan ganda + timer + auto-grade + KKM |
+| **Lab Simulasi** | Konfigurasi IP, ping test, validasi subnet |
+| **Dashboard** | Statistik personal per role |
+| **RLS Supabase** | Keamanan data di level database |
 
 ---
 
-### 3. Template Email (Email Templates)
-Agar email verifikasi dan reset password terlihat profesional dan menggunakan URL yang benar sesuai Next.js.
+## ⚙️ Tech Stack
 
-Buka **Authentication > Email Templates** di Supabase.
+- **Frontend**: Next.js 16 (App Router) + TypeScript
+- **Backend**: Supabase (PostgreSQL + Auth + RLS)
+- **Styling**: Tailwind CSS v4
+- **Auth**: Supabase Auth via `@supabase/ssr`
+- **Route Protection**: `proxy.ts` (Next.js 16)
 
-#### A. Confirm Signup (Verifikasi Email)
-Jika Anda mengaktifkan *Confirm email*, gunakan template ini. Supabase akan mengirimkan link yang harus diganti parameternya.
-Ubah isi body email HTML menjadi:
-```html
-<h2>Selamat datang di TJKT LMS!</h2>
-<p>Klik tombol di bawah ini untuk memverifikasi akun Anda:</p>
-<p>
-  <a href="{{ .SiteURL }}/api/auth/callback?code={{ .TokenHash }}&next=/dashboard" style="display:inline-block;padding:10px 20px;background-color:#2563eb;color:white;text-decoration:none;border-radius:5px;">Verifikasi Email Anda</a>
-</p>
+---
+
+## 📁 Struktur Project
+
 ```
-
-#### B. Reset Password
-Ubah isi body email HTML menjadi:
-```html
-<h2>TJKT LMS - Reset Password</h2>
-<p>Klik tombol di bawah ini untuk mengatur ulang password Anda:</p>
-<p>
-  <a href="{{ .SiteURL }}/api/auth/callback?code={{ .TokenHash }}&next=/reset-password" style="display:inline-block;padding:10px 20px;background-color:#16a34a;color:white;text-decoration:none;border-radius:5px;">Reset Password</a>
-</p>
-<p><small>Abaikan email ini jika Anda tidak merasa meminta reset password.</small></p>
+src/
+├── app/
+│   ├── actions/          # Server Actions
+│   ├── classes/          # Kelas + detail [id]
+│   ├── dashboard/        # Dashboard role-aware
+│   ├── lab/[id]/         # Lab simulasi
+│   ├── login/ register/  # Auth pages
+│   ├── quiz/[id]/        # Quiz + timer
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx          # Landing page
+├── components/           # Navbar, Sidebar, Card, dll
+└── lib/                  # Auth, types, Supabase clients
+proxy.ts                  # Route protection
+supabase/schema.sql       # Full SQL + RLS + triggers
 ```
 
 ---
 
-### 4. Admin & Guru Login (Email & Password)
-**Catatan Penting:** 
-- Admin dan Guru **TIDAK** menggunakan tombol "Login dengan Google". 
-- Google OAuth terikat dengan trigger SQL (`handle_new_user`) yang otomatis menjadikan pendaftar sebagai **Siswa** (`student`).
-- Akun Admin & Guru hanya dapat dibuat dari **Admin Dashboard > User Management** (melalui endpoint API terenkripsi menggunakan *Service Role Key*).
-- Admin & Guru harus login manual menggunakan form **Email / Password**.
+## 🔧 Setup
 
----
+### 1. Install
 
-### 5. Deployment Info
-Pastikan `.env.local` Anda di server Vercel (production) telah berisi:
+```bash
+npm install
+```
+
+### 2. Setup Supabase
+
+1. Buat project di [supabase.com](https://supabase.com)
+2. **SQL Editor** → paste `supabase/schema.sql` → Run
+
+### 3. Isi `.env.local`
+
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://[PROJECT_ID].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=ey...
-SUPABASE_SERVICE_ROLE_KEY=ey...
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
-JANGAN masukkan `SUPABASE_SERVICE_ROLE_KEY` ke `NEXT_PUBLIC` karena itu memberikan bypass izin penuh pada database.
+
+### 4. Buat Admin
+
+```sql
+UPDATE profiles SET role = 'admin'
+WHERE id = (SELECT id FROM auth.users WHERE email = 'admin@sekolah.sch.id');
+```
+
+### 5. Jalankan
+
+```bash
+npm run dev
+```
 
 ---
-*Development by Ghifari Azhar | Production by LTEC SMK NEGERI 1 LIWA*
+
+## 👥 Roles
+
+| Role | Kemampuan |
+|---|---|
+| **admin** | Lihat semua data, ubah role |
+| **teacher** | Buat kelas, materi, quiz, lab |
+| **student** | Join kelas, kerjakan quiz & lab |
+
+---
+
+## 🔐 Keamanan
+
+- RLS aktif semua tabel Supabase
+- Server Actions untuk semua mutasi
+- `proxy.ts` route protection
+- Session refresh via `@supabase/ssr`
+
+---
+
+MIT · NetLearnX © 2026
